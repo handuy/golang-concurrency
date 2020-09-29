@@ -36,11 +36,4 @@ Chạy vòng lặp 10 lần:
 - Trong mỗi vòng lặp, đăng kí 2 go routine với wait group để nó theo dõi. Mỗi khi có 1 go routine chạy xong thì báo với wait group là tôi chạy xong rồi, không phải chờ nữa
 - Bên ngoài vòng lặp, đặt hàm wg.Wait() để hàm main chờ cả 20 go routine chạy xong hết thì mới quit
 
-Version này code đang bị lỗi race condition do 
-- Có nhiều go routine cùng viết vào cùng 1 địa chỉ cache
-- Hoặc 1 go routine đang viết trong khi có 1 go routine khác đang đọc vào 1 địa chỉ cache
-- Chi tiết xem trong comment code
-- Chạy lệnh sau để xác định race condition
-```go
-go run --race .
-``` 
+Version này khắc phục race conditon bằng cách xài mutex. Chi tiết xem trong comment code 
