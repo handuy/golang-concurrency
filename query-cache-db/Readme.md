@@ -1,25 +1,46 @@
 ```go
+wg := &sync.WaitGroup{}
+
 for i := 0; i < 10; i++ {
     id := rnd.Intn(10) + 1
+    // Đăng kí 2 go routine đang chạy với wait group
+    wg.Add(2)
 
-    go func(id int) {
+    go func(id int, wg *sync.WaitGroup) {
         if b, ok := queryCache(id); ok {
             fmt.Println("Hit cache !!!", b)
         }
-    }(id)
+        // Báo với wait group là chạy xông rồi
+        wg.Done()
+    }(id, wg)
 
-    go func(id int) {
+    go func(id int, wg *sync.WaitGroup) {
         if b, ok := queryDatabase(id); ok {
             fmt.Println("Hit db :(", b)
         }
-    }(id)
-    
-    fmt.Println("Book not found")
+        // Báo với wait group là chạy xông rồi
+        wg.Done()
+    }(id, wg)
+
 }
+
+// Chờ cho đến khi tất cả 20 go routine chạy xong đã 
+// rồi mới kết thúc hàm main
+wg.Wait()
 ```
 
 Chạy vòng lặp 10 lần:
 - Mỗi lần sinh ra 2 go routine: Routine 1 chọc vào cache, routine 2 chọc vào db
 - Như vậy tổng cộng sinh ra 10 x 2 = 20 routine
-- Tuy nhiên chương trình sẽ chỉ chạy ra 10 dòng Book not found
-- Nguyên nhân: Sau khi in ra dòng Book not found thứ 10, hàm main kết thúc trước khi có bất kỳ routine trả về kết quả
+- Tạo 1 Wait Group, như một tổng quản phụ trách theo dõi 20 go routine
+- Trong mỗi vòng lặp, đăng kí 2 go routine với wait group để nó theo dõi. Mỗi khi có 1 go routine chạy xong thì báo với wait group là tôi chạy xong rồi, không phải chờ nữa
+- Bên ngoài vòng lặp, đặt hàm wg.Wait() để hàm main chờ cả 20 go routine chạy xong hết thì mới quit
+
+Version này code đang bị lỗi race condition do 
+- Có nhiều go routine cùng viết vào cùng 1 địa chỉ cache
+- Hoặc 1 go routine đang viết trong khi có 1 go routine khác đang đọc vào 1 địa chỉ cache
+- Chi tiết xem trong comment code
+- Chạy lệnh sau để xác định race condition
+```go
+go run --race .
+``` 
