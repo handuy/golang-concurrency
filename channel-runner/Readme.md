@@ -1,0 +1,1 @@
+### Một ví dụ khác về dùng channel để trao đổi thông tin giữa nhiều goroutine
